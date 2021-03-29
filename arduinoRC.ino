@@ -11,7 +11,6 @@ int lit_Up = green_LED;
 int man_count = 0;
 
 long duration, distance, BackSensor, FrontSensor;
-
 bool oneAction = true;
 int pressedState = 0; 
 //0 = non, 1 = front, 2 = back
@@ -24,10 +23,21 @@ yellowLED = 12 = need caution
 redLED = 13 = alert
 ------------------------
 
-//Back -> Front = exit 
-//Front -> Back = enter
+Back -> Front = exit 
+Front -> Back = enter
+
 */
 
+//----------------setting---------------//
+//limit value schemes
+int green_limit = 4;
+int yellow_limit = 8;
+
+//object detection valaue schemes
+int close_bound = 20; //detects person from this cm distance 
+int far_bound = 200; //to this cm distance
+
+//---------------setting end------------//
 void setup()
 {
   Serial.begin(9600);
@@ -50,7 +60,7 @@ void loop()
   //display light according to the # of people in the room.
   //first int = up to that, green LED.
   //second int = up to that, yellow LED.
-  roomCount(4,8); 
+  roomCount(green_limit, yellow_limit); 
   
   //detect the distance from the front sensor.
   SonarSensor(trigPin1, echoPin1);
@@ -123,7 +133,7 @@ void SonarSensor(int trigPin,int echoPin)
 
 //in the range of 20~200 cm?
 bool inRange(long sensorValue){
-  if(20 < sensorValue && sensorValue < 200){
+  if(close_bound < sensorValue && sensorValue < far_bound){
     return true;
   }else{
     return false;
