@@ -7,10 +7,11 @@ const int red_LED = 13;
 const int yellow_LED = 12;
 const int green_LED = 11;
 
-int lit_Up = green_LED;
+int lit_up = green_LED;
 int man_count = 0;
 
-long duration, distance, BackSensor, FrontSensor;
+long BackSensor, FrontSensor;
+
 bool oneAction = true;
 int pressedState = 0; 
 //0 = non, 1 = front, 2 = back
@@ -23,21 +24,10 @@ yellowLED = 12 = need caution
 redLED = 13 = alert
 ------------------------
 
-Back -> Front = exit 
-Front -> Back = enter
-
+//Back -> Front = exit 
+//Front -> Back = enter
 */
 
-//----------------setting---------------//
-//limit value schemes
-int green_limit = 4;
-int yellow_limit = 8;
-
-//object detection valaue schemes
-int close_bound = 20; //detects person from this cm distance 
-int far_bound = 200; //to this cm distance
-
-//---------------setting end------------//
 void setup()
 {
   Serial.begin(9600);
@@ -60,24 +50,31 @@ void loop()
   //display light according to the # of people in the room.
   //first int = up to that, green LED.
   //second int = up to that, yellow LED.
-  roomCount(green_limit, yellow_limit); 
+  roomCount(4,8); 
   
   //detect the distance from the front sensor.
-  SonarSensor(trigPin1, echoPin1);
-  FrontSensor = distance;
+  FrontSensor = SonarSensor(trigPin1, echoPin1);
   
   //detect back sensor distance.
-  SonarSensor(trigPin2, echoPin2);
-  BackSensor = distance;
+  BackSensor = SonarSensor(trigPin2, echoPin2);
+  
+  //for test:
+  Serial.print("\n F:");
+  Serial.print(FrontSensor);
+  //Serial.println("");
+  Serial.print(" B:");
+  Serial.print(BackSensor);
   
   //front detected -> back detected: person enters the room.
   if(inRange(FrontSensor) && oneAction && (pressedState == 0 || pressedState == 1)){
     pressedState = 1;
     if(inRange(BackSensor)){
         man_count++;
-      Serial.print(man_count);
+        Serial.print(man_count);
         Serial.println(" people in the room.");
-      oneAction = false;
+        oneAction = false;
+        digitalWrite(lit_up, LOW);
+      delay(250);
     }
   }
   
@@ -90,6 +87,8 @@ void loop()
         Serial.print(man_count);
         Serial.println(" people in the room.");
         oneAction = false;
+        digitalWrite(lit_up, LOW);
+      delay(250);
       }
     }
   }
@@ -98,30 +97,35 @@ void loop()
     oneAction = true;
     pressedState = 0;
   }
+  
 }
 
 //led flashes acccording to the # of people in room.
 void roomCount(int green_limit, int yellow_limit){
   if(man_count < green_limit + 1){
     blink(green_LED);
+    lit_up = green_LED;
   }else if(man_count < yellow_limit + 1){
     blink(yellow_LED);
+    lit_up = yellow_LED;
   }else{
     blink(red_LED);
+    lit_up = red_LED;
   }
 }
 
 //led flasher
 void blink(int led_Pin){
   digitalWrite(led_Pin, HIGH);
-  delay(250);
-  digitalWrite(led_Pin, LOW);
-  delay(250);
+//  delay(250);
+//  digitalWrite(led_Pin, LOW);
+//  delay(250);
 }
 
 //detects the distance.
-void SonarSensor(int trigPin,int echoPin)
+long SonarSensor(int trigPin,int echoPin)
 {
+  long duration, distance;
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
@@ -129,11 +133,12 @@ void SonarSensor(int trigPin,int echoPin)
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH);
   distance = (duration/2) / 29.1;
+  return distance;
 }
 
 //in the range of 20~200 cm?
 bool inRange(long sensorValue){
-  if(close_bound < sensorValue && sensorValue < far_bound){
+  if(5 < sensorValue && sensorValue < 200){
     return true;
   }else{
     return false;
